@@ -1,19 +1,35 @@
-import p5 from "p5";
-import { setup, draw } from "./main";
 
-let p5Instance = new p5((p) => {
-	p.setup = () => setup(p);
-	p.draw = () => draw(p);
+import p5 from 'p5';
+import { project } from './main';
+
+let p5Instance = new p5((p: p5) => {
+  Object.assign(
+    p,
+    Object.fromEntries(
+      Object.entries(project).map((v) => [
+        v[0],
+        (...args: unknown[]) => v[1](p, ...args),
+      ])
+    )
+  );
 });
 
 if (import.meta.hot) {
-	import.meta.hot.accept('./main', (newModule) => {
-		p5Instance.remove();
-		p5Instance = new p5((p) => {
-			// @ts-expect-error
-			p.setup = () => newModule.setup(p);
-			// @ts-expect-error
-			p.draw = () => newModule.draw(p);
-		});
-	})
+  import.meta.hot.accept(
+    './main',
+    ({ project: newModule }: typeof import('./main')) => {
+      p5Instance.remove();
+      p5Instance = new p5((p: p5) => {
+        Object.assign(
+          p,
+          Object.fromEntries(
+            Object.entries(newModule).map((v) => [
+              v[0],
+              (...args: unknown[]) => v[1](p, ...args),
+            ])
+          )
+        );
+      });
+    }
+  );
 }
